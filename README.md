@@ -3,7 +3,7 @@ Draw sexp.
 
 ![fib.png](https://raw.githubusercontent.com/wiki/tojoqk/pict-sexp/images/fib.png)
 
-# INSALL
+# INSTALL
 ```
 raco pkg install https://github.com/tojoqk/pict-sexp.git
 ```
