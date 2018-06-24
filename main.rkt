@@ -1,4 +1,6 @@
-#lang racket
+#lang racket/base
+(require racket/gui/base)
+(require racket/format)
 (require racket/contract)
 (require pict)
 
