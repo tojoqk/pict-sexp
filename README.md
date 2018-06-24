@@ -8,6 +8,16 @@ Draw sexp.
 raco pkg install https://github.com/tojoqk/pict-sexp.git
 ```
 
+# UPDATE
+```
+raco pkg update https://github.com/tojoqk/pict-sexp.git
+````
+
+# UNINSTALL
+```
+raco pkg remove pict-sexp
+```
+
 # USAGE
 Save as "pict-fib.png".
 ```
