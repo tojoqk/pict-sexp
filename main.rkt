@@ -1,4 +1,5 @@
 #lang racket
+(require racket/contract)
 (require pict)
 
 (define CELL-SIZE 30)
@@ -111,4 +112,4 @@
   (define-values (result height-list)
     (pict-sexp/helper sexp '() (λ () (error "pict-sexp: implementation error"))))
   result)
-(provide pict-sexp)
+(provide/contract [pict-sexp (any/c . -> . pict?)])
