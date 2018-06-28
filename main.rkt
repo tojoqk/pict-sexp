@@ -1,8 +1,11 @@
 #lang racket/base
+(require pict)
 (require racket/gui/base)
 (require racket/format)
+(require racket/function)
+(require racket/match)
 (require racket/contract)
-(require pict)
+(require tojoqk/amb)
 
 (define CELL-SIZE 30)
 (define ARROW-LENGTH 40)
@@ -69,49 +72,47 @@
   (cc-superimpose (cellophane (filled-rectangle CELL-SIZE CELL-SIZE) 0)
                   (text (~a x))))
 
-
 (define (cdr* lst)
   (if (null? lst)
       '()
       (cdr lst)))
 
-(define (pict-sexp/helper sexp height-list fail)
+(define (%pict-sexp sexp height-list)
   (when (and (pair? height-list)
              (<= 0 (car height-list)))
-    (fail))
+    (amb))
   (cond
     [(pair? sexp)
-     (let*-values ([(cell) (pict-cons-cell sexp)]
-                   [(cell-1 height-list)
+     (let*-values ([(p) (pict-cons-cell sexp)]
+                   [(p-1 height-list)
                     (cond
                       [(need-arrow? (cdr sexp))
                        (let-values ([(pict-cdr cdr-height-list)
-                                     (pict-sexp/helper (cdr sexp)
-                                                       (cdr* height-list)
-                                                       fail)])
-                         (values (arrow-from-cdr cell pict-cdr)
+                                     (%pict-sexp (cdr sexp) (cdr* height-list))])
+                         (values (arrow-from-cdr p pict-cdr)
                                  (cons 0 cdr-height-list)))]
-                      [else (values cell (cons 0 (cdr* height-list)))])]
-                   [(cell-2 height-list)
+                      [else (values p (cons 0 (cdr* height-list)))])]
+                   [(p-2 height-list)
                     (cond
                       [(need-arrow? (car sexp))
-                       (let retry ([len 1] [height-list (map sub1 height-list)])
-                         (let/cc escape
-                           (let/cc fail
-                             (let-values ([(pict-car height-list)
-                                           (pict-sexp/helper (car sexp)
-                                                             height-list
-                                                             fail)])
-                               (escape (arrow-from-car len cell pict-car)
-                                       (map (λ (x) (+ x len)) height-list))))
-                           (retry (add1 len) (map sub1 height-list))))]
-                      [else (values cell height-list)])])
-       (values (lt-superimpose cell-1 cell-2) height-list))]
+                       (match-let ([(cons len height-list)
+                                    (let retry ([len 0]
+                                                [height-list height-list])
+                                      (amb (cons len height-list)
+                                           (retry (add1 len) (map sub1 height-list))))])
+                         (let-values ([(pict-car height-list)
+                                       (%pict-sexp (car sexp) height-list)])
+                           (values (arrow-from-car len p pict-car)
+                                   (map (λ (x) (+ x len)) height-list))))]
+                      [else (values p height-list)])])
+       (values (lt-superimpose p-1 p-2) height-list))]
     [else
      (values (pict-atom sexp) (cons 0 (cdr* height-list)))]))
 
 (define (pict-sexp sexp)
-  (define-values (result height-list)
-    (pict-sexp/helper sexp '() (λ () (error "pict-sexp: implementation error"))))
-  result)
+  (call-with-amb
+   (thunk
+    (define-values (result height-list)
+      (%pict-sexp sexp '()))
+    result)))
 (provide/contract [pict-sexp (any/c . -> . pict?)])
